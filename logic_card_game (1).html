@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logic Quest — เกมไพ่ตรรกศาสตร์</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Sarabun:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --felt: #1a4a2e;
+    --felt-light: #235c39;
+    --felt-dark: #0f2d1a;
+    --gold: #c9a84c;
+    --gold-light: #e8cb7a;
+    --gold-dark: #8a6f2e;
+    --red-card: #c0392b;
+    --cream: #fdf6e3;
+    --ink: #1a1a2e;
+    --logic-blue: #2980b9;
+    --logic-purple: #8e44ad;
+    --white: #ffffff;
+    --shadow: rgba(0,0,0,0.5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: radial-gradient(ellipse at center, var(--felt-light) 0%, var(--felt) 40%, var(--felt-dark) 100%);
+    min-height: 100vh;
+    color: var(--cream);
+    overflow-x: hidden;
+  }
+
+  /* ─── DECORATIVE BORDER ─── */
+  body::before {
+    content: '';
+    position: fixed; inset: 12px;
+    border: 2px solid var(--gold-dark);
+    border-radius: 16px;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: inset 0 0 40px rgba(201,168,76,0.08);
+  }
+
+  /* ─── SCREENS ─── */
+  .screen { display: none; min-height: 100vh; padding: 32px 24px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* ─── TITLE SCREEN ─── */
+  #screen-title {
+    justify-content: center;
+    text-align: center;
+    gap: 0;
+  }
+
+  .suit-row {
+    font-size: 2.4rem;
+    letter-spacing: 20px;
+    color: var(--gold);
+    opacity: 0.5;
+    margin-bottom: 24px;
+    animation: suitFloat 3s ease-in-out infinite;
+  }
+  @keyframes suitFloat {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  h1.title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2.4rem, 7vw, 4.5rem);
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 40px rgba(201,168,76,0.4), 2px 2px 0 var(--gold-dark);
+    letter-spacing: 4px;
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    color: var(--gold-light);
+    letter-spacing: 8px;
+    margin-bottom: 48px;
+    opacity: 0.85;
+  }
+
+  /* ─── RULE PANEL ─── */
+  .rule-panel {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--gold-dark);
+    border-radius: 12px;
+    padding: 24px 32px;
+    max-width: 700px;
+    width: 100%;
+    margin-bottom: 36px;
+    text-align: left;
+  }
+
+  .rule-panel h2 {
+    font-family: 'Cinzel', serif;
+    color: var(--gold);
+    font-size: 1.1rem;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--gold-dark);
+    padding-bottom: 10px;
+  }
+
+  .logic-symbols {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .sym-card {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sym {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    color: var(--gold);
+    min-width: 36px;
+    text-align: center;
+  }
+
+  .sym-info { font-size: 0.82rem; line-height: 1.4; }
+  .sym-name { color: var(--gold-light); font-weight: 600; }
+  .sym-desc { color: rgba(253,246,227,0.7); }
+
+  .game-rules { font-size: 0.85rem; color: rgba(253,246,227,0.8); line-height: 1.8; }
+  .game-rules span { color: var(--gold-light); font-weight: 600; }
+
+  /* ─── PLAYER SELECT ─── */
+  .player-select-group {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+
+  .player-btn {
+    width: 80px; height: 100px;
+    border: 2px solid var(--gold-dark);
+    border-radius: 12px;
+    background: rgba(0,0,0,0.3);
+    color: var(--cream);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    font-family: 'Sarabun', sans-serif;
+  }
+
+  .player-btn:hover { border-color: var(--gold); background: rgba(201,168,76,0.12); transform: translateY(-3px); }
+  .player-btn.selected { border-color: var(--gold); background: rgba(201,168,76,0.2); box-shadow: 0 0 20px rgba(201,168,76,0.3); }
+  .player-btn .num { font-family: 'Cinzel', serif; font-size: 2rem; color: var(--gold); font-weight: 700; }
+  .player-btn .lbl { font-size: 0.75rem; color: rgba(253,246,227,0.7); }
+
+  /* ─── BUTTONS ─── */
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    border: none;
+    color: var(--ink);
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 16px 48px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+    transition: all 0.2s;
+  }
+
+  .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(201,168,76,0.5); }
+  .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--gold-dark);
+    color: var(--gold-light);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.9rem;
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+
+  /* ─── SETUP SCREEN ─── */
+  #screen-setup { gap: 24px; }
+
+  .setup-title {
+    font-family: 'Cinzel', serif;
+    color: var(--gold);
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+
+  .name-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .name-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--gold-dark);
+    border-radius: 8px;
+    padding: 10px 16px;
+  }
+
+  .name-row label { font-size: 1.2rem; min-width: 32px; }
+
+  .name-row input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--cream);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 1rem;
+  }
+
+  .name-row input::placeholder { color: rgba(253,246,227,0.35); }
+
+  /* ─── GAME SCREEN ─── */
+  #screen-game {
+    gap: 0;
+    padding: 20px 16px;
+  }
+
+  /* Score Bar */
+  .score-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  .score-chip {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--gold-dark);
+    border-radius: 50px;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s;
+  }
+
+  .score-chip.active-turn {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.15);
+    box-shadow: 0 0 16px rgba(201,168,76,0.25);
+  }
+
+  .chip-avatar { font-size: 1.3rem; }
+  .chip-name { font-size: 0.9rem; color: var(--gold-light); font-weight: 600; }
+  .chip-score { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--gold); font-weight: 700; }
+  .chip-badge { font-size: 0.7rem; color: rgba(253,246,227,0.5); }
+
+  /* Round/Turn Info */
+  .round-info {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--gold-dark);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .turn-announce {
+    font-family: 'Cinzel', serif;
+    font-size: 1.3rem;
+    color: var(--gold);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  /* ─── CARD TABLE ─── */
+  .card-table {
+    perspective: 1000px;
+    margin-bottom: 24px;
+  }
+
+  .playing-card {
+    width: 240px;
+    height: 340px;
+    position: relative;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .playing-card.flipped { transform: rotateY(180deg); }
+
+  .card-face, .card-back {
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    backface-visibility: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+  }
+
+  .card-back {
+    background: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .card-back::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 2px solid var(--gold-dark);
+    border-radius: 10px;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(201,168,76,0.06),
+      rgba(201,168,76,0.06) 4px,
+      transparent 4px,
+      transparent 12px
+    );
+  }
+
+  .card-back-sym {
+    font-size: 4rem;
+    color: var(--gold);
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 8px rgba(201,168,76,0.5);
+  }
+
+  .card-face {
+    background: var(--cream);
+    transform: rotateY(180deg);
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    color: var(--ink);
+  }
+
+  .card-corner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+  }
+
+  .card-rank {
+    font-family: 'Cinzel', serif;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: var(--ink);
+  }
+
+  .card-rank.red { color: var(--red-card); }
+
+  .card-suit-top { font-size: 1.1rem; }
+
+  .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0;
+    gap: 6px;
+  }
+
+  .card-op-symbol {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--logic-purple);
+  }
+
+  .card-op-name {
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; }
+
+  /* ─── QUESTION AREA ─── */
+  .question-area {
+    background: rgba(0,0,0,0.45);
+    border: 1px solid var(--gold-dark);
+    border-radius: 14px;
+    padding: 20px 24px;
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+    margin-bottom: 20px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .q-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    color: var(--gold-dark);
+    margin-bottom: 4px;
+  }
+
+  .q-expr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(1.3rem, 4vw, 2rem);
+    color: var(--cream);
+    font-weight: 700;
+    letter-spacing: 2px;
+    word-break: break-all;
+  }
+
+  .q-hint {
+    font-size: 0.78rem;
+    color: rgba(253,246,227,0.5);
+    line-height: 1.6;
+  }
+
+  .q-waiting {
+    font-family: 'Cinzel', serif;
+    color: var(--gold-dark);
+    font-size: 1rem;
+    letter-spacing: 2px;
+  }
+
+  /* ─── ANSWER BUTTONS ─── */
+  .answer-area {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .ans-btn {
+    width: 100px; height: 100px;
+    border-radius: 14px;
+    border: 2px solid;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .ans-btn.true-btn {
+    border-color: #27ae60;
+    background: rgba(39,174,96,0.1);
+    color: #2ecc71;
+  }
+
+  .ans-btn.true-btn:hover {
+    background: rgba(39,174,96,0.25);
+    box-shadow: 0 0 24px rgba(39,174,96,0.4);
+    transform: translateY(-3px);
+  }
+
+  .ans-btn.false-btn {
+    border-color: var(--red-card);
+    background: rgba(192,57,43,0.1);
+    color: #e74c3c;
+  }
+
+  .ans-btn.false-btn:hover {
+    background: rgba(192,57,43,0.25);
+    box-shadow: 0 0 24px rgba(192,57,43,0.4);
+    transform: translateY(-3px);
+  }
+
+  .ans-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+  .ans-btn .ans-icon { font-size: 2rem; }
+
+  /* ─── FEEDBACK ─── */
+  .feedback {
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 12px 32px;
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 16px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .feedback.show { opacity: 1; }
+  .feedback.correct { background: rgba(39,174,96,0.18); border: 1px solid #27ae60; color: #2ecc71; }
+  .feedback.wrong { background: rgba(192,57,43,0.18); border: 1px solid var(--red-card); color: #e74c3c; }
+  .feedback.info { background: rgba(201,168,76,0.12); border: 1px solid var(--gold-dark); color: var(--gold); }
+
+  /* ─── TRUTH TABLE ─── */
+  .truth-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 16px;
+    max-width: 600px;
+    width: 100%;
+  }
+
+  table.tt {
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    width: 100%;
+  }
+
+  table.tt th, table.tt td {
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 6px 14px;
+    text-align: center;
+  }
+
+  table.tt th {
+    background: rgba(201,168,76,0.12);
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  table.tt td { color: var(--cream); }
+  table.tt td.t { color: #2ecc71; }
+  table.tt td.f { color: #e74c3c; }
+
+  /* ─── SPECIAL CARDS ─── */
+  .special-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--ink);
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+  }
+
+  /* ─── RESULT SCREEN ─── */
+  #screen-result { gap: 24px; text-align: center; justify-content: center; }
+
+  .result-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    color: var(--gold);
+    text-shadow: 0 0 30px rgba(201,168,76,0.4);
+    margin-bottom: 8px;
+  }
+
+  .podium {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    margin: 24px 0;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .podium-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .podium-avatar { font-size: 2rem; }
+  .podium-name { font-size: 0.82rem; color: var(--gold-light); }
+  .podium-score-val { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--gold); font-weight: 700; }
+
+  .podium-block {
+    width: 90px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    color: var(--ink);
+    font-size: 1.4rem;
+    min-height: 40px;
+  }
+
+  .rank1 .podium-block { background: linear-gradient(to top, var(--gold-dark), var(--gold)); height: 110px; }
+  .rank2 .podium-block { background: linear-gradient(to top, #7f8c8d, #bdc3c7); height: 80px; }
+  .rank3 .podium-block { background: linear-gradient(to top, #a04000, #ca6f1e); height: 55px; }
+
+  .result-list {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .result-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--gold-dark);
+    border-radius: 8px;
+    padding: 10px 16px;
+  }
+
+  .result-rank { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.1rem; min-width: 28px; }
+  .result-avatar { font-size: 1.4rem; }
+  .result-name { flex: 1; color: var(--cream); }
+  .result-pts { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-weight: 700; }
+  .result-acc { font-size: 0.78rem; color: rgba(253,246,227,0.5); }
+
+  /* ─── THEORY SCREEN ─── */
+  #screen-theory { gap: 20px; }
+
+  .theory-card {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--gold-dark);
+    border-radius: 12px;
+    padding: 20px 24px;
+    width: 100%;
+    max-width: 720px;
+  }
+
+  .theory-card h3 {
+    font-family: 'Cinzel', serif;
+    color: var(--gold);
+    font-size: 1rem;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+    padding-bottom: 8px;
+  }
+
+  .theory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+
+  .law-item {
+    background: rgba(201,168,76,0.06);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  .law-name { font-size: 0.78rem; color: var(--gold-light); font-weight: 600; margin-bottom: 4px; }
+  .law-expr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--cream);
+  }
+
+  .theory-p { font-size: 0.88rem; color: rgba(253,246,227,0.8); line-height: 1.8; }
+
+  /* nav */
+  .nav-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .screen.active > * { animation: slideUp 0.4s ease both; }
+  .screen.active > *:nth-child(2) { animation-delay: 0.05s; }
+  .screen.active > *:nth-child(3) { animation-delay: 0.1s; }
+  .screen.active > *:nth-child(4) { animation-delay: 0.15s; }
+
+  @keyframes cardDeal {
+    from { opacity: 0; transform: translateY(-60px) rotateX(30deg); }
+    to { opacity: 1; transform: translateY(0) rotateX(0deg); }
+  }
+
+  .card-table.deal { animation: cardDeal 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+  }
+
+  .score-chip.pulse { animation: pulse 0.6s ease; }
+
+  /* ─── SPECIAL EFFECTS ─── */
+  .confetti-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    overflow: hidden;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 10px; height: 10px;
+    top: -20px;
+    animation: confettiFall linear forwards;
+  }
+
+  @keyframes confettiFall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 480px) {
+    .playing-card { width: 180px; height: 255px; }
+    .card-op-symbol { font-size: 2.2rem; }
+    .answer-area { gap: 10px; }
+    .ans-btn { width: 80px; height: 80px; font-size: 0.9rem; }
+    .ans-btn .ans-icon { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== TITLE SCREEN ========== -->
+<div id="screen-title" class="screen active">
+  <div class="suit-row">♠ ♥ ♣ ♦</div>
+  <h1 class="title">LOGIC QUEST</h1>
+  <div class="subtitle">เกมไพ่ตรรกศาสตร์</div>
+
+  <div class="rule-panel">
+    <h2>✦ สัญลักษณ์ตรรกศาสตร์</h2>
+    <div class="logic-symbols">
+      <div class="sym-card">
+        <div class="sym">~</div>
+        <div class="sym-info">
+          <div class="sym-name">Negation (นิเสธ)</div>
+          <div class="sym-desc">กลับค่าความจริง<br>~T = F, ~F = T</div>
+        </div>
+      </div>
+      <div class="sym-card">
+        <div class="sym">∧</div>
+        <div class="sym-info">
+          <div class="sym-name">Conjunction (และ)</div>
+          <div class="sym-desc">จริงเมื่อทั้งคู่จริง<br>T∧T = T เท่านั้น</div>
+        </div>
+      </div>
+      <div class="sym-card">
+        <div class="sym">∨</div>
+        <div class="sym-info">
+          <div class="sym-name">Disjunction (หรือ)</div>
+          <div class="sym-desc">จริงเมื่ออย่างน้อยหนึ่งจริง<br>เท็จเฉพาะ F∨F</div>
+        </div>
+      </div>
+      <div class="sym-card">
+        <div class="sym">→</div>
+        <div class="sym-info">
+          <div class="sym-name">Implication (ถ้า...แล้ว)</div>
+          <div class="sym-desc">เท็จเฉพาะเมื่อ T→F<br>ทุกกรณีอื่นเป็นจริง</div>
+        </div>
+      </div>
+      <div class="sym-card">
+        <div class="sym">↔</div>
+        <div class="sym-info">
+          <div class="sym-name">Biconditional (ก็ต่อเมื่อ)</div>
+          <div class="sym-desc">จริงเมื่อค่าเหมือนกัน<br>T↔T = T, T↔F = F</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="game-rules">
+      <span>วิธีเล่น:</span> จั่วไพ่ ดูสัญลักษณ์บนไพ่ แล้วตอบว่านิพจน์ที่แสดงมีค่า <span>จริง</span> หรือ <span>เท็จ</span><br>
+      <span>แต้ม:</span> ตอบถูก +3 คะแนน | ตอบผิด -1 คะแนน | ไพ่พิเศษ ×2 คะแนน<br>
+      <span>รอบ:</span> เล่น 5 รอบต่อคน แล้วรวมคะแนนชนะ
+    </div>
+  </div>
+
+  <div style="margin-bottom:24px;">
+    <div style="font-family:'Cinzel',serif; font-size:0.85rem; letter-spacing:3px; color:var(--gold-dark); margin-bottom:16px;">เลือกจำนวนผู้เล่น</div>
+    <div class="player-select-group" id="playerCountGroup">
+      <button class="player-btn" data-count="1" onclick="selectPlayerCount(1)">
+        <span class="num">1</span><span class="lbl">คน</span>
+      </button>
+      <button class="player-btn" data-count="2" onclick="selectPlayerCount(2)">
+        <span class="num">2</span><span class="lbl">คน</span>
+      </button>
+      <button class="player-btn" data-count="3" onclick="selectPlayerCount(3)">
+        <span class="num">3</span><span class="lbl">คน</span>
+      </button>
+      <button class="player-btn" data-count="4" onclick="selectPlayerCount(4)">
+        <span class="num">4</span><span class="lbl">คน</span>
+      </button>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+    <button class="btn-gold" id="startBtn" onclick="goSetup()" disabled>เริ่มเกม ▶</button>
+    <button class="btn-outline" onclick="showTheory()">ทฤษฎีตรรกศาสตร์ 📖</button>
+  </div>
+</div>
+
+<!-- ========== SETUP SCREEN ========== -->
+<div id="screen-setup" class="screen">
+  <div class="setup-title">ตั้งชื่อผู้เล่น</div>
+  <div class="name-inputs" id="nameInputs"></div>
+  <br>
+  <div style="display:flex; gap:12px;">
+    <button class="btn-outline" onclick="goTitle()">‹ กลับ</button>
+    <button class="btn-gold" onclick="startGame()">เริ่มเลย! ▶</button>
+  </div>
+</div>
+
+<!-- ========== GAME SCREEN ========== -->
+<div id="screen-game" class="screen">
+
+  <div class="score-bar" id="scoreBar"></div>
+  <div class="round-info" id="roundInfo">รอบที่ 1 / 5</div>
+  <div class="turn-announce" id="turnAnnounce">ผู้เล่นที่ 1</div>
+
+  <div class="card-table" id="cardTable">
+    <div class="playing-card" id="theCard" onclick="flipCard()">
+      <div class="card-back">
+        <div class="card-back-sym">?</div>
+      </div>
+      <div class="card-face" id="cardFace">
+        <div class="card-corner top">
+          <div class="card-rank" id="cardRank">A</div>
+          <div class="card-suit-top" id="cardSuit">♠</div>
+        </div>
+        <div class="card-body">
+          <div class="special-badge" id="specialBadge" style="display:none">⭐ ไพ่พิเศษ ×2</div>
+          <div class="card-op-symbol" id="cardOpSym">∧</div>
+          <div class="card-op-name" id="cardOpName">Conjunction</div>
+        </div>
+        <div class="card-corner bottom">
+          <div class="card-rank" id="cardRank2">A</div>
+          <div class="card-suit-top" id="cardSuit2">♠</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="question-area">
+    <div class="q-label">นิพจน์ตรรกศาสตร์</div>
+    <div class="q-expr" id="qExpr">—</div>
+    <div class="q-hint" id="qHint"></div>
+    <div class="q-waiting" id="qWaiting">คลิกที่ไพ่เพื่อเปิด ▲</div>
+  </div>
+
+  <div class="answer-area">
+    <button class="ans-btn true-btn" id="btnTrue" onclick="answer(true)" disabled>
+      <span class="ans-icon">✓</span>
+      <span>จริง</span>
+    </button>
+    <button class="ans-btn false-btn" id="btnFalse" onclick="answer(false)" disabled>
+      <span class="ans-icon">✗</span>
+      <span>เท็จ</span>
+    </button>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="truth-table-wrap" id="ttWrap" style="display:none">
+    <table class="tt" id="ttTable"></table>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-outline" onclick="goTitle()">หยุดเกม</button>
+  </div>
+</div>
+
+<!-- ========== RESULT SCREEN ========== -->
+<div id="screen-result" class="screen">
+  <div class="suit-row" style="font-size:1.8rem; letter-spacing:12px; margin-bottom:0;">♠ ♥ ♣ ♦</div>
+  <div class="result-title">สิ้นสุดการแข่งขัน</div>
+  <div style="color:var(--gold-light); font-size:0.9rem; margin-bottom:8px;">ผลคะแนนรวม</div>
+
+  <div class="podium" id="podium"></div>
+  <div class="result-list" id="resultList"></div>
+
+  <br>
+  <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+    <button class="btn-gold" onclick="restartSame()">เล่นใหม่ (ผู้เล่นเดิม)</button>
+    <button class="btn-outline" onclick="goTitle()">เมนูหลัก</button>
+  </div>
+</div>
+
+<!-- ========== THEORY SCREEN ========== -->
+<div id="screen-theory" class="screen">
+  <div class="setup-title" style="margin-top:20px;">ทฤษฎีตรรกศาสตร์ 📖</div>
+
+  <div class="theory-card" style="max-width:720px; width:100%;">
+    <h3>ตารางค่าความจริงพื้นฐาน</h3>
+    <div style="overflow-x:auto;">
+      <table class="tt" style="font-size:0.8rem;">
+        <thead>
+          <tr>
+            <th>p</th><th>q</th><th>~p</th><th>p∧q</th><th>p∨q</th><th>p→q</th><th>p↔q</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="t">T</td><td class="t">T</td><td class="f">F</td>
+            <td class="t">T</td><td class="t">T</td><td class="t">T</td><td class="t">T</td>
+          </tr>
+          <tr>
+            <td class="t">T</td><td class="f">F</td><td class="f">F</td>
+            <td class="f">F</td><td class="t">T</td><td class="f">F</td><td class="f">F</td>
+          </tr>
+          <tr>
+            <td class="f">F</td><td class="t">T</td><td class="t">T</td>
+            <td class="f">F</td><td class="t">T</td><td class="t">T</td><td class="f">F</td>
+          </tr>
+          <tr>
+            <td class="f">F</td><td class="f">F</td><td class="t">T</td>
+            <td class="f">F</td><td class="f">F</td><td class="t">T</td><td class="t">T</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="theory-card">
+    <h3>กฎตรรกศาสตร์สำคัญ (Laws of Logic)</h3>
+    <div class="theory-grid">
+      <div class="law-item">
+        <div class="law-name">Double Negation</div>
+        <div class="law-expr">~(~p) ≡ p</div>
+      </div>
+      <div class="law-item">
+        <div class="law-name">De Morgan's (AND)</div>
+        <div class="law-expr">~(p∧q) ≡ ~p∨~q</div>
+      </div>
+      <div class="law-item">
+        <div class="law-name">De Morgan's (OR)</div>
+        <div class="law-expr">~(p∨q) ≡ ~p∧~q</div>
+      </div>
+      <div class="law-item">
+        <div class="law-name">Implication</div>
+        <div class="law-expr">p→q ≡ ~p∨q</div>
+      </div>
+      <div class="law-item">
+        <div class="law-name">Contrapositive</div>
+        <div class="law-expr">p→q ≡ ~q→~p</div>
+      </div>
+      <div class="law-item">
+        <div class="law-name">Tautology (AND)</div>
+        <div class="law-expr">p∧T ≡ p</div>
+      </div>
+      <div class="law-item">
+        <div class="law-name">Absorption</div>
+        <div class="law-expr">p∨(p∧q) ≡ p</div>
+      </div>
+      <div class="law-item">
+        <div class="law-name">Distribution</div>
+        <div class="law-expr">p∧(q∨r) ≡ (p∧q)∨(p∧r)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="theory-card">
+    <h3>ประเภทนิพจน์</h3>
+    <p class="theory-p">
+      <strong style="color:var(--gold-light);">Tautology (สัจนิรันดร์)</strong> — นิพจน์ที่มีค่าเป็นจริงทุกกรณี เช่น p∨~p<br>
+      <strong style="color:var(--gold-light);">Contradiction (ขัดแย้ง)</strong> — นิพจน์ที่มีค่าเป็นเท็จทุกกรณี เช่น p∧~p<br>
+      <strong style="color:var(--gold-light);">Contingency (เงื่อนไข)</strong> — นิพจน์ที่ค่าความจริงขึ้นกับค่าตัวแปร เช่น p∧q
+    </p>
+  </div>
+
+  <button class="btn-outline" onclick="showTitle()">‹ กลับหน้าหลัก</button>
+</div>
+
+<!-- Confetti container -->
+<div class="confetti-container" id="confettiContainer"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+const AVATARS = ['🃏','🎴','♟️','🎲','🎯','🎪'];
+const SUITS   = ['♠','♥','♣','♦'];
+const RANKS   = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const ROUNDS_PER_PLAYER = 5;
+const CORRECT_PTS = 3;
+const WRONG_PTS   = -1;
+const DOUBLE_CHANCE = 0.2; // 20% chance for double card
+
+let numPlayers = 0;
+let players = [];
+let currentPlayerIdx = 0;
+let currentRound = 1;
+let currentQ = null;
+let cardFlipped = false;
+let answered = false;
+
+// ─── QUESTION GENERATOR ──────────────────────────────────
+const T = true, F = false;
+
+function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// Operators definition
+const OPS = [
+  {
+    sym: '∧', name: 'Conjunction', opName: 'AND',
+    fn: (a,b) => a && b,
+    desc: (a,b) => `${tf(a)} ∧ ${tf(b)}`
+  },
+  {
+    sym: '∨', name: 'Disjunction', opName: 'OR',
+    fn: (a,b) => a || b,
+    desc: (a,b) => `${tf(a)} ∨ ${tf(b)}`
+  },
+  {
+    sym: '→', name: 'Implication', opName: 'IF-THEN',
+    fn: (a,b) => !a || b,
+    desc: (a,b) => `${tf(a)} → ${tf(b)}`
+  },
+  {
+    sym: '↔', name: 'Biconditional', opName: 'IFF',
+    fn: (a,b) => a === b,
+    desc: (a,b) => `${tf(a)} ↔ ${tf(b)}`
+  },
+];
+
+const OPS_ADV = [
+  // ~ variations
+  {
+    sym: '~∧', name: 'NOT AND', opName: 'NAND',
+    fn: (a,b) => !(a && b),
+    desc: (a,b) => `~(${tf(a)} ∧ ${tf(b)})`
+  },
+  {
+    sym: '~∨', name: 'NOT OR', opName: 'NOR',
+    fn: (a,b) => !(a || b),
+    desc: (a,b) => `~(${tf(a)} ∨ ${tf(b)})`
+  },
+  // Negation on one side
+  {
+    sym: '~→', name: 'NEG → IMP', opName: 'NOT-IMPLY',
+    fn: (a,b) => !(!a || b),
+    desc: (a,b) => `~(${tf(a)} → ${tf(b)})`
+  },
+  // Compound
+  {
+    sym: '∧∨', name: 'Compound', opName: 'COMPOUND',
+    fn: (a,b,c) => (a && b) || c,
+    desc: (a,b,c) => `(${tf(a)} ∧ ${tf(b)}) ∨ ${tf(c)}`
+  },
+  {
+    sym: '∨∧', name: 'Compound', opName: 'COMPOUND',
+    fn: (a,b,c) => (a || b) && c,
+    desc: (a,b,c) => `(${tf(a)} ∨ ${tf(b)}) ∧ ${tf(c)}`
+  },
+];
+
+function tf(v) { return v ? 'T' : 'F'; }
+
+function genQuestion(level) {
+  const isAdv = level >= 2 && Math.random() < 0.4;
+  const pool = isAdv ? [...OPS, ...OPS_ADV] : OPS;
+  const op = rnd(pool);
+
+  let a = rnd([T,F]);
+  let b = rnd([T,F]);
+
+  if (op.fn.length === 3) {
+    let c = rnd([T,F]);
+    const ans = op.fn(a, b, c);
+    const expr = op.desc(a, b, c);
+    return { expr, ans, op, vars: [a,b,c] };
+  } else {
+    const ans = op.fn(a, b);
+    const expr = op.desc(a, b);
+    return { expr, ans, op, vars: [a,b] };
+  }
+}
+
+function genTruthTable(op) {
+  if (op.fn.length === 3) {
+    const rows = [[T,T,T],[T,T,F],[T,F,T],[T,F,F],[F,T,T],[F,T,F],[F,F,T],[F,F,F]];
+    let html = '<thead><tr><th>p</th><th>q</th><th>r</th><th>Result</th></tr></thead><tbody>';
+    for (const [a,b,c] of rows) {
+      const res = op.fn(a,b,c);
+      html += `<tr>
+        <td class="${a?'t':'f'}">${tf(a)}</td>
+        <td class="${b?'t':'f'}">${tf(b)}</td>
+        <td class="${c?'t':'f'}">${tf(c)}</td>
+        <td class="${res?'t':'f'}">${tf(res)}</td>
+      </tr>`;
+    }
+    html += '</tbody>';
+    return html;
+  } else {
+    const rows = [[T,T],[T,F],[F,T],[F,F]];
+    let html = '<thead><tr><th>p</th><th>q</th><th>Result</th></tr></thead><tbody>';
+    for (const [a,b] of rows) {
+      const res = op.fn(a,b);
+      html += `<tr>
+        <td class="${a?'t':'f'}">${tf(a)}</td>
+        <td class="${b?'t':'f'}">${tf(b)}</td>
+        <td class="${res?'t':'f'}">${tf(res)}</td>
+      </tr>`;
+    }
+    html += '</tbody>';
+    return html;
+  }
+}
+
+// ─── SCREEN NAVIGATION ───────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goTitle()   { showScreen('screen-title'); }
+function showTitle() { showScreen('screen-title'); }
+function showTheory() { showScreen('screen-theory'); }
+
+// ─── PLAYER COUNT SELECTION ──────────────────────────────
+function selectPlayerCount(n) {
+  numPlayers = n;
+  document.querySelectorAll('.player-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.count) === n);
+  });
+  document.getElementById('startBtn').disabled = false;
+}
+
+function goSetup() {
+  if (!numPlayers) return;
+  const wrap = document.getElementById('nameInputs');
+  wrap.innerHTML = '';
+  const defaultNames = ['Alice','Bob','Charlie','Diana'];
+  for (let i = 0; i < numPlayers; i++) {
+    wrap.innerHTML += `
+      <div class="name-row">
+        <label>${AVATARS[i]}</label>
+        <input type="text" id="pname${i}" placeholder="ผู้เล่นที่ ${i+1}" value="${defaultNames[i] || ''}">
+      </div>`;
+  }
+  showScreen('screen-setup');
+}
+
+// ─── START GAME ──────────────────────────────────────────
+function startGame() {
+  players = [];
+  for (let i = 0; i < numPlayers; i++) {
+    const inp = document.getElementById(`pname${i}`);
+    const name = inp ? inp.value.trim() || `ผู้เล่น ${i+1}` : `ผู้เล่น ${i+1}`;
+    players.push({ name, score: 0, correct: 0, total: 0, avatar: AVATARS[i] });
+  }
+  currentPlayerIdx = 0;
+  currentRound = 1;
+  showScreen('screen-game');
+  buildScoreBar();
+  dealNewCard();
+}
+
+function restartSame() {
+  players.forEach(p => { p.score = 0; p.correct = 0; p.total = 0; });
+  currentPlayerIdx = 0;
+  currentRound = 1;
+  showScreen('screen-game');
+  buildScoreBar();
+  dealNewCard();
+}
+
+// ─── SCORE BAR ───────────────────────────────────────────
+function buildScoreBar() {
+  const bar = document.getElementById('scoreBar');
+  bar.innerHTML = players.map((p,i) => `
+    <div class="score-chip ${i===currentPlayerIdx?'active-turn':''}" id="chip${i}">
+      <span class="chip-avatar">${p.avatar}</span>
+      <div>
+        <div class="chip-name">${p.name}</div>
+        <div class="chip-badge">${p.correct}/${p.total} ✓</div>
+      </div>
+      <div class="chip-score" id="chipScore${i}">${p.score}</div>
+    </div>
+  `).join('');
+}
+
+function updateScoreBar() {
+  players.forEach((p,i) => {
+    const chip = document.getElementById(`chip${i}`);
+    const scoreEl = document.getElementById(`chipScore${i}`);
+    if (!chip || !scoreEl) return;
+    chip.classList.toggle('active-turn', i === currentPlayerIdx);
+    scoreEl.textContent = p.score;
+    chip.querySelector('.chip-badge').textContent = `${p.correct}/${p.total} ✓`;
+    if (scoreEl.dataset.prev !== String(p.score)) {
+      chip.classList.add('pulse');
+      setTimeout(() => chip.classList.remove('pulse'), 700);
+      scoreEl.dataset.prev = p.score;
+    }
+  });
+}
+
+// ─── DEAL CARD ───────────────────────────────────────────
+function dealNewCard() {
+  const p = players[currentPlayerIdx];
+  cardFlipped = false;
+  answered = false;
+
+  // Generate question (harder on later rounds)
+  const level = Math.ceil(currentRound / 2);
+  currentQ = genQuestion(level);
+  currentQ.isDouble = Math.random() < DOUBLE_CHANCE;
+
+  // Card appearance
+  const suit   = rnd(SUITS);
+  const rank   = rnd(RANKS);
+  const isRed  = suit === '♥' || suit === '♦';
+  const redCls = isRed ? ' red' : '';
+
+  document.getElementById('cardRank').className  = `card-rank${redCls}`;
+  document.getElementById('cardRank2').className = `card-rank${redCls}`;
+  document.getElementById('cardRank').textContent  = rank;
+  document.getElementById('cardRank2').textContent = rank;
+  document.getElementById('cardSuit').textContent  = suit;
+  document.getElementById('cardSuit2').textContent = suit;
+  document.getElementById('cardOpSym').textContent  = currentQ.op.sym;
+  document.getElementById('cardOpName').textContent = currentQ.op.name;
+  document.getElementById('specialBadge').style.display = currentQ.isDouble ? 'inline-block' : 'none';
+
+  // Reset card
+  const card = document.getElementById('theCard');
+  card.classList.remove('flipped');
+  card.style.cursor = 'pointer';
+
+  // Reset question area
+  document.getElementById('qExpr').textContent = '—';
+  document.getElementById('qHint').textContent = '';
+  document.getElementById('qWaiting').style.display = '';
+  document.getElementById('btnTrue').disabled  = true;
+  document.getElementById('btnFalse').disabled = true;
+
+  // Reset feedback
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.textContent = '';
+
+  // Hide truth table
+  document.getElementById('ttWrap').style.display = 'none';
+
+  // Animate card
+  const table = document.getElementById('cardTable');
+  table.classList.remove('deal');
+  void table.offsetWidth;
+  table.classList.add('deal');
+
+  // Round info
+  const totalRounds = ROUNDS_PER_PLAYER * numPlayers;
+  const globalRound = (currentRound - 1) * numPlayers + currentPlayerIdx + 1;
+  document.getElementById('roundInfo').textContent = `รอบที่ ${currentRound} / ${ROUNDS_PER_PLAYER}`;
+  document.getElementById('turnAnnounce').innerHTML =
+    `${p.avatar} เทิร์นของ <strong style="color:var(--gold)">${p.name}</strong> ${currentQ.isDouble ? '⭐' : ''}`;
+}
+
+// ─── FLIP CARD ───────────────────────────────────────────
+function flipCard() {
+  if (cardFlipped) return;
+  cardFlipped = true;
+
+  const card = document.getElementById('theCard');
+  card.classList.add('flipped');
+  card.style.cursor = 'default';
+
+  document.getElementById('qExpr').textContent = currentQ.expr;
+  document.getElementById('qWaiting').style.display = 'none';
+
+  // Generate hint
+  const opHints = {
+    '∧': 'จริงเมื่อทั้งคู่เป็นจริงเท่านั้น',
+    '∨': 'เท็จเฉพาะเมื่อทั้งคู่เป็นเท็จ',
+    '→': 'เท็จเฉพาะเมื่อสมมติฐานจริง แต่ผลลัพธ์เท็จ',
+    '↔': 'จริงเมื่อทั้งคู่มีค่าเหมือนกัน',
+    '~∧': 'ผกผันของ AND — เท็จเฉพาะเมื่อทั้งคู่จริง',
+    '~∨': 'ผกผันของ OR — จริงเฉพาะเมื่อทั้งคู่เท็จ',
+    '~→': 'ผกผันของ IMPLY',
+    '∧∨': 'คำนวณวงเล็บในก่อน',
+    '∨∧': 'คำนวณวงเล็บในก่อน',
+  };
+  document.getElementById('qHint').textContent = opHints[currentQ.op.sym] || '';
+
+  document.getElementById('btnTrue').disabled  = false;
+  document.getElementById('btnFalse').disabled = false;
+}
+
+// ─── ANSWER ──────────────────────────────────────────────
+function answer(userAnswer) {
+  if (!cardFlipped || answered) return;
+  answered = true;
+
+  document.getElementById('btnTrue').disabled  = true;
+  document.getElementById('btnFalse').disabled = true;
+
+  const correct = userAnswer === currentQ.ans;
+  const p = players[currentPlayerIdx];
+  p.total++;
+
+  let pts = 0;
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+
+  if (correct) {
+    pts = CORRECT_PTS * (currentQ.isDouble ? 2 : 1);
+    p.score  += pts;
+    p.correct++;
+    fb.className = 'feedback show correct';
+    fb.innerHTML = `✓ ถูกต้อง! +${pts} คะแนน ${currentQ.isDouble ? '⭐' : ''}`;
+    if (currentQ.isDouble) shootConfetti();
+  } else {
+    pts = WRONG_PTS;
+    p.score = Math.max(0, p.score + pts);
+    fb.className = 'feedback show wrong';
+    fb.innerHTML = `✗ ผิด! คำตอบที่ถูกคือ <strong>${currentQ.ans ? 'จริง' : 'เท็จ'}</strong>`;
+  }
+
+  // Show truth table
+  const ttWrap = document.getElementById('ttWrap');
+  const ttTable = document.getElementById('ttTable');
+  if (currentQ.op.fn.length <= 3) {
+    ttTable.innerHTML = genTruthTable(currentQ.op);
+    ttWrap.style.display = '';
+  }
+
+  updateScoreBar();
+
+  // Next turn after delay
+  setTimeout(() => {
+    nextTurn();
+  }, correct ? 2000 : 2500);
+}
+
+// ─── NEXT TURN ───────────────────────────────────────────
+function nextTurn() {
+  currentPlayerIdx++;
+  if (currentPlayerIdx >= numPlayers) {
+    currentPlayerIdx = 0;
+    currentRound++;
+  }
+
+  if (currentRound > ROUNDS_PER_PLAYER) {
+    endGame();
+    return;
+  }
+
+  dealNewCard();
+}
+
+// ─── END GAME ────────────────────────────────────────────
+function endGame() {
+  showScreen('screen-result');
+  const sorted = [...players].sort((a,b) => b.score - a.score);
+
+  // Podium
+  const podium = document.getElementById('podium');
+  const podiumOrder = sorted.length >= 3 ? [sorted[1], sorted[0], sorted[2]] : [sorted[0]];
+  const ranks = sorted.length >= 3 ? [2, 1, 3] : [1];
+
+  podium.innerHTML = podiumOrder.map((p, idx) => {
+    const rank = ranks[idx];
+    const rankStr = rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
+    return `
+      <div class="podium-slot rank${rank}">
+        <div class="podium-avatar">${p.avatar}</div>
+        <div class="podium-name">${p.name}</div>
+        <div class="podium-score-val">${p.score} pt</div>
+        <div class="podium-block">${rankStr}</div>
+      </div>`;
+  }).join('');
+
+  // Full list
+  const list = document.getElementById('resultList');
+  list.innerHTML = sorted.map((p, i) => {
+    const acc = p.total > 0 ? Math.round((p.correct/p.total)*100) : 0;
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+    return `
+      <div class="result-row">
+        <div class="result-rank">${medal}</div>
+        <div class="result-avatar">${p.avatar}</div>
+        <div class="result-name">${p.name}</div>
+        <div>
+          <div class="result-pts">${p.score} pt</div>
+          <div class="result-acc">แม่นยำ ${acc}%</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Winner confetti
+  shootConfetti(80);
+}
+
+// ─── CONFETTI ────────────────────────────────────────────
+function shootConfetti(count = 30) {
+  const container = document.getElementById('confettiContainer');
+  const colors = ['#c9a84c','#e8cb7a','#2ecc71','#e74c3c','#3498db','#9b59b6'];
+  const shapes = ['●','■','★','♠','♥','♦'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.textContent = rnd(shapes);
+    el.style.left = Math.random() * 100 + '%';
+    el.style.color = rnd(colors);
+    el.style.fontSize = (10 + Math.random() * 16) + 'px';
+    el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    el.style.animationDelay    = Math.random() * 0.8 + 's';
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+</script>
+</body>
+</html>
